@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Data Display</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="mt-5">API Data Display</h1>
+        <!-- Button to open modal -->
+        <button type="button" class="btn btn-primary mt-3" data-toggle="modal" data-target="#imageModal">
+            Select Image
+        </button>
+        <div class="form-group mt-3">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search">
+        </div>
+        <table class="table mt-3">
+            <thead>
+                <tr>
+                    <th>Sr.</th>
+                    <th>Task</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Colour Code</th>
+                </tr>
+            </thead>
+            <tbody id="apiData">
+                <!-- API data will be inserted here -->
+                <tr>
+                    <td colspan="5">Loading Data...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">Select Image</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- File input for selecting image -->
+                    <input type="file" id="imageInput" accept="image/*">
+                    <!-- Preview image -->
+                    <img src="" id="previewImage" alt="Preview Image" class="img-fluid mt-3" style="display: none;">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="selectImageButton">Select</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#selectImageButton').on('click', function () {
+                var fileInput = document.getElementById('imageInput');
+                var previewImage = document.getElementById('previewImage');
+
+                // Check if a file was selected
+                if (fileInput.files && fileInput.files[0]) {
+                    var reader = new FileReader();
+
+                    reader.onload = function (e) {
+                        previewImage.src = e.target.result;
+                        previewImage.style.display = 'block';
+                    }
+
+                    // Read the selected file as a data URL
+                    reader.readAsDataURL(fileInput.files[0]);
+                }
+            });
+
+            // Function to fetch API data
+            function fetchData() {
+                $.ajax({
+                    url: '/vero/api.php',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        // Populate table with JSON data
+                        // console.log(data);
+                        var html = '';
+                        var sr = 0;
+                        $.each(data, function (key, value) {
+                            html += '<tr style="background-color:' + value.colorCode + ';">';
+                            sr = sr + 1;
+                            html += '<td>' + sr + '</td>';
+                            html += '<td>' + value.task + '</td>';
+                            html += '<td>' + value.title + '</td>';
+                            html += '<td>' + value.description + '</td>';
+                            html += '<td>' + value.colorCode + '</td>';
+                            html += '</tr>';
+                        });
+                        $('#apiData').html(html);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching API data:', error);
+                    }
+                });
+            }
+            // Initial API call
+            fetchData();
+
+            // Search button click event
+            $('#searchInput').on('keyup', function () {
+                var value = $(this).val().toLowerCase();
+                $('#apiData tr').filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            // Reload API call every 60 minutes
+            setInterval(fetchData, 60 * 60 * 1000);
+        });
+    </script>
+</body>
+
+</html>
